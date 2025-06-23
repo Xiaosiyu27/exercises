@@ -1,0 +1,144 @@
+# 读取CSV文件，使用ID列作为索引
+birds = pd.read_csv('bird_foo_data.csv', index_col='ID')
+print(birds.head())  # 检查前5行数据
+
+分类: 列表筛选 (List Filtering) 与列表推导式 (List Comprehension)  
+# 题目来源: exam (1).py  
+# =================================================================================  
+
+def get_even_numbers(numbers):  
+  # 函数文档字符串，解释函数功能  
+  """  
+  从一个整数列表中返回所有偶数。  
+  """  
+  # 核心解法：使用列表推导式  
+  # 遍历 'numbers' 列表中的每一个 'num'  
+  # 'if num % 2 == 0' 是筛选条件，只有当数字是偶数时才保留  
+  return [num for num in numbers if num % 2 == 0]  
+
+# --- 测试代码 ---  
+print("--- 测试列表筛选 ---")  
+test_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  
+even_nums = get_even_numbers(test_list)  
+print(f"列表 {test_list} 中的偶数是: {even_nums}") # 期望输出: [2, 4, 6, 8, 10]  
+print("-" * 30)  
+
+
+# =================================================================================  
+# 分类: 字符串切片 (String Slicing)  
+# 题目来源: exam (2).py  
+# =================================================================================  
+
+def reverse_string(s):  
+  """  
+  返回给定字符串的反转版本。  
+  """  
+  # 核心解法：使用扩展切片语法  
+  # s[start:stop:step]  
+  # 当 step 为 -1 时，表示从后往前遍历整个字符串，从而实现反转  
+  return s[::-1]  
+
+# --- 测试代码 ---  
+print("--- 测试字符串反转 ---")  
+test_str = "Hello World"  
+reversed_str = reverse_string(test_str)  
+print(f"'{test_str}' 的反转是: '{reversed_str}'") # 期望输出: 'dlroW olleH'  
+print("-" * 30)  
+
+
+# =================================================================================  
+# 分类: 字符串遍历与条件计数 (String Iteration & Conditional Counting)  
+# 题目来源: exam (3).py  
+# =================================================================================  
+
+def count_vowels(s):  
+  """  
+  计算字符串中元音字母的数量（不区分大小写）。  
+  """  
+  # 定义元音字母集合，用于快速查找  
+  vowels = "aeiou"  
+  # 首先使用 .lower() 方法将整个输入字符串转换为小写，以忽略大小写差异  
+  lower_s = s.lower()  
+  
+  # 核心解法：使用生成器表达式和 sum() 函数  
+  # (1 for char in lower_s if char in vowels) 会为每个元音字母生成一个 1  
+  # sum() 函数将所有这些 1 加起来，得到最终的总数  
+  return sum(1 for char in lower_s if char in vowels)  
+
+# --- 测试代码 ---  
+print("--- 测试元音计数 ---")  
+test_vowel_str = "Programming is Fun"  
+vowel_count = count_vowels(test_vowel_str)  
+print(f"'{test_vowel_str}' 中的元音数量是: {vowel_count}") # 期望输出: 5 (o, a, i, i, u)  
+print("-" * 30)  
+
+
+# =================================================================================  
+# 分类: 内置函数应用 (Built-in Function Application)  
+# 题目来源: exam (4).py  
+# =================================================================================  
+
+def find_max_number(numbers):  
+  """  
+  返回列表中最大的数字。如果列表为空，则返回 None。  
+  """  
+  # 核心解法：直接使用Python强大的内置 max() 函数  
+  # 为了程序的健壮性，使用三元条件表达式进行判断  
+  # 如果 'numbers' 列表不为空 (if numbers)，则返回 max(numbers)  
+  # 否则 (else)，返回 None，避免对空列表调用 max() 导致错误  
+  return max(numbers) if numbers else None  
+
+# --- 测试代码 ---  
+print("--- 测试查找最大数 ---")  
+test_max_list = [15, 7, 99, 42, -5]  
+max_num = find_max_number(test_max_list)  
+print(f"列表 {test_max_list} 中的最大数是: {max_num}") # 期望输出: 99  
+empty_list_result = find_max_number([])  
+print(f"空列表的结果是: {empty_list_result}") # 期望输出: None  
+print("-" * 30)  
+
+
+# =================================================================================  
+# 分类: 利用集合(Set)进行去重 (Deduplication via Sets)  
+# 题目来源: exam (5).py  
+# =================================================================================  
+
+def remove_duplicates(items):  
+  """  
+  从列表中移除重复项，并返回一个无重复元素的新列表。  
+  """  
+  # 核心解法：利用集合 (set) 的特性  
+  # 1. set(items): 将列表转换为集合。集合的一个基本特性是所有元素都是唯一的，所以重复项会自动被移除。  
+  # 2. list(...): 将去重后的集合转换回列表。  
+  # 注意：转换回列表后，元素的顺序可能与原列表不同。  
+  return list(set(items))  
+
+# --- 测试代码 ---  
+print("--- 测试列表去重 ---")  
+test_dup_list = [1, 2, 2, 3, 4, 4, 4, 5, 1]  
+unique_list = remove_duplicates(test_dup_list)  
+print(f"列表 {test_dup_list} 去重后的结果是: {unique_list}") # 期望输出可能是 [1, 2, 3, 4, 5] （顺序不定）  
+print("-" * 30)  
+
+
+# =================================================================================  
+# 分类: 字符串分割与计数 (String Splitting & Counting)  
+# 题目来源: exam (9).py  
+# =================================================================================  
+
+def word_count(s):  
+  """  
+  计算一个字符串中的单词数量。  
+  """  
+  # 核心解法：分为两步  
+  # 1. s.split(): 使用字符串的 .split() 方法，它会默认按所有空白字符（空格、换行、制表符等）进行分割，  
+  #    并返回一个包含所有单词的列表。  
+  # 2. len(...): 使用 len() 函数计算该列表的长度，即单词的数量。  
+  return len(s.split())  
+
+# --- 测试代码 ---  
+print("--- 测试单词计数 ---")  
+sentence = "Python is a versatile programming language."  
+count = word_count(sentence)  
+print(f"句子 '{sentence}' 的单词数是: {count}") # 期望输出: 6  
+print("-" * 30)  
