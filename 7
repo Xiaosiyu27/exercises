@@ -1,0 +1,272 @@
+# 练习7: 偶数和奇数出现次数的直方图
+# =============================================================================
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+
+# 偶数出现次数的数据（按值排序）
+even_data = df[df['even']]['std_num'].sort_values()
+ax1.hist(even_data, bins=20, color='skyblue', edgecolor='black', 
+         label=f'偶数 ({len(even_data)}个三联体)')
+ax1.set_title('出现次数为偶数的三联体')
+ax1.set_xlabel('标准化出现次数')
+ax1.set_ylabel('频率')
+ax1.legend()
+ax1.grid(True, alpha=0.3)
+
+# 奇数出现次数的数据（按值排序）
+odd_data = df[~df['even']]['std_num'].sort_values()
+ax2.hist(odd_data, bins=20, color='salmon', edgecolor='black', 
+         label=f'奇数 ({len(odd_data)}个三联体)')
+ax2.set_title('出现次数为奇数的三联体')
+ax2.set_xlabel('标准化出现次数')
+ax2.legend()
+ax2.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+# =============================================================================
+
+# Exercise 7: Scatter plot of standardized values
+# =============================================================================
+# 筛选特定类别的数据
+subset = df[df['class'] == 't-CS-s'].copy()
+
+# 标准化处理
+subset['Bcatenin_N_std'] = (subset['Bcatenin_N'] - subset['Bcatenin_N'].mean()) / subset['Bcatenin_N'].std()
+subset['Tau_N_std'] = (subset['Tau_N'] - subset['Tau_N'].mean()) / subset['Tau_N'].std()
+
+# 绘制散点图
+plt.figure(figsize=(10, 6))
+plt.scatter(subset['Bcatenin_N_std'], subset['Tau_N_std'], 
+            alpha=0.7, color='teal', edgecolor='black')
+
+plt.title("Standardized Values for 't-CS-s' Class")
+plt.xlabel('Standardized Bcatenin_N')
+plt.ylabel('Standardized Tau_N')
+plt.grid(True, alpha=0.3)
+plt.axhline(0, color='gray', linestyle='--', alpha=0.5)
+plt.axvline(0, color='gray', linestyle='--', alpha=0.5)
+plt.tight_layout()
+plt.show()
+
+# =============================================================================
+
+# Exercise 7: Scatter plots for methylation levels
+# =============================================================================
+# 要分析的甲基化水平列
+methylation_cols = ['SLC12A5', 'VGF', 'SCGN']
+
+# 创建3行1列的子图布局
+fig, axes = plt.subplots(3, 1, figsize=(10, 15))
+
+# 为每个甲基化水平绘制散点图
+for i, col in enumerate(methylation_cols):
+    axes[i].scatter(df['age_years'], df[col], 
+                   alpha=0.6, color='teal', edgecolor='black')
+    axes[i].set_title(f'Age vs {col} Methylation Level')
+    axes[i].set_xlabel('Age (years)')
+    axes[i].set_ylabel(f'{col} Methylation Level')
+    axes[i].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+# =============================================================================
+
+# Exercise 7: Volume vs (Yolk + Albumen) scatter plot
+# =============================================================================
+# 计算椭球体积（注意：scan.length和scan.width是全长，需要除以2得到半轴）
+df['volume'] = df.apply(
+    lambda row: ellipsoid_volume(
+        row['scan.length']/2, 
+        row['scan.width']/2, 
+        row['x']/2
+    ), 
+    axis=1
+)
+
+# 计算蛋黄和蛋白的总质量
+df['yolk_albumen'] = df['Yolk'] + df['Albumen']
+
+# 创建散点图
+plt.figure(figsize=(12, 8))
+
+# 按物种着色
+for species in species_list:
+    subset = df[df['Species'] == species]
+    plt.scatter(subset['volume'], subset['yolk_albumen'], 
+                alpha=0.7, label=species)
+
+plt.title('Egg Volume vs Yolk+Albumen Mass')
+plt.xlabel('Volume (cm³)')
+plt.ylabel('Yolk + Albumen Mass (g)')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+# =============================================================================
+
+# Exercise 7: Scatter plot of Citrulline vs S-Adenosyl-L-methioninamine
+# =============================================================================
+plt.figure(figsize=(12, 8))
+
+# 按状态分组绘制散点图
+statuses = df['Status'].unique()
+colors = {'endemic': 'blue', 'widespread': 'red'}
+
+for status in statuses:
+    subset = df[df['Status'] == status]
+    plt.scatter(subset['S-Adenosyl-L-methioninamine'], subset['Citrulline'], 
+                alpha=0.7, color=colors[status], label=status)
+
+plt.title('Citrulline vs S-Adenosyl-L-methioninamine')
+plt.xlabel('S-Adenosyl-L-methioninamine')
+plt.ylabel('Citrulline')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+# =============================================================================
+# ### Exercise 7: 创建观测数据集
+print("\nExercise 7: 创建每个pet_id的观测数据集...")
+# 按pet_id分组，提取关键信息
+obs = dogs_df.groupby('pet_id').agg(
+    breeds=('breeds', 'first'),      # 取第一个品种
+    weight=('weight', 'first'),      # 取第一个体重
+    age=('age', 'first'),            # 取第一个年龄
+    max_mean_ecg_delta=('mean_ecg_delta', 'max')  # 取最大平均ECG间隔
+).reset_index()
+
+print("观测数据集创建完成，前5行：")
+print(obs.head())
+
+# Exercise 7: 绘制甲基化水平散点图
+fig, axes = plt.subplots(3, 1, figsize=(10, 15))
+
+# 甲基化指标列表
+methylation_genes = ['SLC12A5', 'VGF', 'SCGN']
+
+# 为每个指标创建散点图
+for i, gene in enumerate(methylation_genes):
+    ax = axes[i]
+    ax.scatter(df['age_years'], df[gene], alpha=0.7, c='green')
+    ax.set_xlabel('Age (years)')
+    ax.set_ylabel(f'{gene} Methylation Level')
+    ax.set_title(f'Age vs {gene} Methylation Level')
+    ax.grid(True, linestyle='--', alpha=0.5)
+
+plt.tight_layout()
+plt.savefig('methylation_scatter.png')
+print("Exercise 7 completed: Scatter plots saved as methylation_scatter.png")
+
+# Exercise 7: Plot histograms of male and female rhinos per reserve
+# 绘制按性别和保护区分布的犀牛数量堆叠柱状图
+# 获取每个保护区不同性别的唯一犀牛数量
+rhino_counts = rhinos_df.groupby(['Reserve', 'Sex'])['RhinosAtSighting'].nunique().unstack()
+
+plt.figure(figsize=(12, 8))
+rhino_counts.plot(kind='bar', stacked=True, color=['lightpink', 'lightblue'])
+plt.title('Number of Unique Rhinos per Reserve by Sex')
+plt.xlabel('Reserve')
+plt.ylabel('Number of Unique Rhinos')
+plt.legend(title='Sex')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig('reserve_gender_counts.png')
+
+
+# Exercise 7: Add siblings column
+# 添加兄弟姐妹数量列
+# 创建父母到子女的映射
+parent_child_map = {}
+for child_idx, parent_idx in df['parent'].items():
+    if parent_idx != -1:
+        if parent_idx not in parent_child_map:
+            parent_child_map[parent_idx] = []
+        parent_child_map[parent_idx].append(child_idx)
+
+# 计算每个子女的兄弟姐妹数量（包括自己）
+df['siblings'] = 0
+for parent_idx, children in parent_child_map.items():
+    # 兄弟姐妹数量 = 同父母的孩子总数
+    num_siblings = len(children)
+    for child_idx in children:
+        df.loc[child_idx, 'siblings'] = num_siblings
+
+# Exercise 7: Plot histograms of ratios
+# 绘制宽度比率和长度比率的直方图
+plt.figure(figsize=(15, 6))
+
+# 左侧子图：宽度比率
+plt.subplot(1, 2, 1)
+for species in iris['species'].unique():
+    subset = iris[iris['species'] == species]
+    plt.hist(subset['width_ratio'], alpha=0.5, bins=15, label=species)
+plt.xlabel('Petal Width / Sepal Width Ratio')
+plt.ylabel('Frequency')
+plt.title('Width Ratios by Species')
+plt.legend()
+
+# 右侧子图：长度比率
+plt.subplot(1, 2, 2)
+for species in iris['species'].unique():
+    subset = iris[iris['species'] == species]
+    plt.hist(subset['length_ratio'], alpha=0.5, bins=15, label=species)
+plt.xlabel('Petal Length / Sepal Length Ratio')
+plt.title('Length Ratios by Species')
+
+plt.tight_layout()
+plt.savefig('iris_ratios_hist.png')
+print("Exercise 7 completed: Histograms saved")
+
+# Exercise 7: Plot histograms of male and female rhinos per reserve
+# 绘制按性别和保护区分布的犀牛数量直方图
+# 获取每个保护区不同性别的唯一犀牛数量
+rhino_counts = rhinos_df.groupby(['Reserve', 'Sex'])['RhinosAtSighting'].nunique().unstack()
+
+plt.figure(figsize=(12, 8))
+rhino_counts.plot(kind='bar', stacked=True, color=['lightblue', 'pink'])
+plt.title('Number of Unique Rhinos per Reserve by Sex')
+plt.xlabel('Reserve')
+plt.ylabel('Number of Unique Rhinos')
+plt.legend(title='Sex')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig('reserve_gender_counts.png')
+print("Exercise 7 completed: Gender histogram saved as reserve_gender_counts.png")
+
+# Exercise 7: Plot scatter plot matrix
+# 选择需要的列
+cols = ['map', 'mat', 'cover', 'ragged']
+if all(col in birds_expanded.columns for col in cols):
+    # 创建散点图矩阵
+    sns.set(style="ticks")
+    g = sns.PairGrid(birds_expanded[cols], diag_sharey=False)
+    g.map_upper(sns.scatterplot, alpha=0.5)
+    g.map_diag(sns.histplot, kde=True)
+    g.map_lower(sns.kdeplot, fill=True)
+    
+    # 设置标题
+    for i, ax in enumerate(g.axes.flat):
+        row_idx = i // len(cols)
+        col_idx = i % len(cols)
+        if row_idx < col_idx:
+            ax.set_title(f"{cols[col_idx]} vs {cols[row_idx]}")
+        elif row_idx > col_idx:
+            ax.set_title(f"{cols[row_idx]} vs {cols[col_idx]}")
+    
+    plt.suptitle('Pairwise Relationships of Environmental Variables', y=1.02)
+    plt.tight_layout()
+    plt.savefig('scatter_matrix.png')
+    print("Exercise 7 completed: Scatter matrix saved")
+else:
+    print("Exercise 7 skipped: Required columns not found")
+
+
+
+
+
+
+
