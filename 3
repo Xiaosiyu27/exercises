@@ -1,0 +1,353 @@
+练习3: 统计三联体及其反向的出现次数
+# =============================================================================
+def count_triplet_occurrences(sequence: str, triplet: str) -> int:
+    """
+    统计序列中三联体及其反向的出现次数
+    
+    参数:
+        sequence: 要搜索的序列
+        triplet: 要搜索的三联体
+        
+    返回:
+        三联体及其反向的总计数
+    
+    示例:
+        >>> count_triplet_occurrences('CAATAATCC', 'AAT')  # 测试用例1
+        3
+        >>> count_triplet_occurrences('AAAAAAA', 'AAA')    # 测试用例2
+        5
+    """
+    reverse = triplet[::-1]  # 计算反向三联体
+    count = 0
+    
+    # 使用滑动窗口计数
+    for i in range(len(sequence) - 2):
+        substr = sequence[i:i+3]
+        if substr == triplet or substr == reverse:
+            count += 1
+            
+    return count
+
+# 测试函数
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+
+# =============================================================================
+
+# Exercise 3: Contrast histograms by genotype and treatment
+# =============================================================================
+fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+
+# 第一列：按基因型分组绘制密度直方图
+for genotype in df['Genotype'].unique():
+    subset = df[df['Genotype'] == genotype]
+    axes[0].hist(subset['NR2A_N'], bins=20, alpha=0.7, 
+                density=True, label=genotype, edgecolor='black')
+    
+axes[0].set_title('By Genotype')
+axes[0].set_xlabel('NR2A_N Expression Level')
+axes[0].set_ylabel('Density')
+axes[0].legend()
+axes[0].grid(True, alpha=0.3)
+
+# 第二列：按治疗分组绘制密度直方图
+for treatment in df['Treatment'].unique():
+    subset = df[df['Treatment'] == treatment]
+    axes[1].hist(subset['NR2A_N'], bins=20, alpha=0.7, 
+                density=True, label=treatment, edgecolor='black')
+    
+axes[1].set_title('By Treatment')
+axes[1].set_xlabel('NR2A_N Expression Level')
+axes[1].legend()
+axes[1].grid(True, alpha=0.3)
+
+plt.suptitle('NR2A_N Distribution Comparison')
+plt.tight_layout()
+plt.show()
+
+# =============================================================================
+
+# Exercise 3: Define the oddity function
+# =============================================================================
+def oddity(series: pd.Series) -> pd.Series:
+    """
+    Scale series values based on index parity
+    
+    Args:
+        series: Input numerical series
+        
+    Returns:
+        Scaled series based on index parity
+        
+    Examples:
+        >>> s = pd.Series([10., 9.5, 8.], index=[0,1,2])
+        >>> oddity(s)
+        0    1000.0
+        1    9500.0
+        2     800.0
+        dtype: float64
+        
+        >>> s = pd.Series([5, 3], index=[10,11])
+        >>> oddity(s)
+        10    500
+        11   3000
+        dtype: int64
+    """
+    # 根据索引奇偶性应用不同缩放因子：奇数索引×1000，偶数索引×100
+    return series * series.index.map(lambda i: 1000 if i % 2 == 1 else 100)
+
+# Test function with doctest
+if __name__ == "__main__":
+    doctest.testmod()
+
+# =============================================================================
+
+# Exercise 3: Ellipsoid volume function
+# =============================================================================
+def ellipsoid_volume(a: float, b: float, c: float) -> float:
+    """
+    计算椭球体积
+    
+    参数:
+        a, b, c: 椭球的三个半轴长度
+        
+    返回:
+        椭球体积
+        
+    示例:
+        >>> round(ellipsoid_volume(3, 4, 5), 2)
+        251.33
+    """
+    return (4/3) * math.pi * a * b * c
+
+# 测试函数
+if __name__ == "__main__":
+    doctest.testmod()
+
+# =============================================================================
+
+# Exercise 3: Define the averages function
+# =============================================================================
+def averages(values: List[float]) -> List[float]:
+    """
+    对输入列表排序后，按每三个元素一组计算平均值
+    
+    参数:
+        values: 输入浮点数列表
+        
+    返回:
+        平均值列表
+        
+    示例:
+        >>> averages([6.0, 1.0, 5.0, 2.0, 4.0, 3.0])
+        [2.0, 5.0]
+        
+        >>> averages([1.0, 2.0, 3.0, 4.0])
+        [2.0, 4.0]
+        
+        >>> averages([1.0, 2.0, 3.0, 4.0, 5.0])
+        [2.0, 4.5]
+    """
+    # 对输入列表排序
+    sorted_vals = sorted(values)
+    result = []
+    
+    # 每三个元素一组计算平均值
+    for i in range(0, len(sorted_vals), 3):
+        group = sorted_vals[i:i+3]
+        result.append(sum(group) / len(group))
+    
+    return result
+
+# 测试函数
+if __name__ == "__main__":
+    doctest.testmod()
+
+# =============================================================================
+# ### Exercise 3: 绘制狗22的心电图脉冲散点图
+print("\nExercise 3: 绘制狗22的前15个ECG脉冲散点图...")
+# 筛选出pet_id为22的记录
+dog_22 = dogs_df[dogs_df['pet_id'] == 22]
+plt.figure(figsize=(12, 8))
+
+# 遍历每条记录
+for i, (index, row) in enumerate(dog_22.iterrows()):
+    # 解析ECG脉冲时间点字符串为浮点数列表
+    ecg_pulses = list(map(float, row['ecg_pulses'].split(',')))[:15]
+    # 为每条记录创建唯一的Y轴位置（偏移量）
+    y_values = [i] * len(ecg_pulses)
+    # 绘制散点图，不同记录使用不同颜色
+    plt.scatter(ecg_pulses, y_values, label=f"记录 {index}")
+
+# 设置Y轴标签为记录ID
+plt.yticks(range(len(dog_22)), [f"记录 {idx}" for idx in dog_22.index])
+plt.xlabel('时间 (秒)')
+plt.title('狗22的前15个ECG脉冲 (共30条记录)')
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.tight_layout()
+plt.savefig('dog_22_ecg_pulses.png')
+print("散点图已保存为 dog_22_ecg_pulses.png")
+
+# Exercise 3: 定义oddity函数
+def oddity(series: pd.Series) -> pd.Series:
+    """
+    Multiply values based on integer index: 
+    even index * 100, odd index * 1000
+    
+    Args:
+        series: Pandas Series of numerical values
+        
+    Returns:
+        Transformed Series
+        
+    Example:
+    >>> s = pd.Series([10., 9.5, 8.], index=[0, 1, 2])
+    >>> oddity(s)
+    0    1000.0
+    1    9500.0
+    2     800.0
+    dtype: float64
+    """
+    # 根据索引奇偶性创建乘数数组
+    multipliers = np.where(series.index % 2 == 0, 100, 1000)
+    return series * multipliers
+
+# 运行文档测试
+print("Running doctests for oddity function...")
+import doctest
+doctest.testmod()
+print("Exercise 3 completed: oddity function defined")
+
+# Exercise 3: 定义oddity函数
+def oddity(series: pd.Series) -> pd.Series:
+    """
+    Multiply values based on integer index: 
+    even index * 100, odd index * 1000
+    
+    Args:
+        series: Pandas Series of numerical values
+        
+    Returns:
+        Transformed Series
+        
+    Example:
+    >>> s = pd.Series([10., 9.5, 8.], index=[0, 1, 2])
+    >>> oddity(s)
+    0    1000.0
+    1    9500.0
+    2     800.0
+    dtype: float64
+    """
+    # 根据索引奇偶性创建乘数数组
+    multipliers = np.where(series.index % 2 == 0, 100, 1000)
+    return series * multipliers
+
+# 运行文档测试
+print("Running doctests for oddity function...")
+import doctest
+doctest.testmod()
+print("Exercise 3 completed: oddity function defined")
+
+# Exercise 3: Compute average age difference
+# 计算子女与父母的平均年龄差
+parent_age = df.loc[df['parent']].set_index(df.index)['age']
+age_diff = parent_age - df['age']
+avg_age_diff = age_diff[df['parent'] != -1].mean()
+print(f"Average age difference: {avg_age_diff:.2f} years")
+
+# Exercise 3: Plot the random walks
+# 绘制5个随机行走路径
+plt.figure(figsize=(10, 10))
+for i, walk in enumerate(walks):
+    plt.plot(walk[:, 0], walk[:, 1], marker='o', markersize=3, 
+             linestyle='-', linewidth=1, label=f'Walk {i+1}')
+plt.scatter(center[0], center[1], c='red', s=100, label='Start')
+plt.title('Random Walks on 51x51 Grid')
+plt.xlabel('X')
+plt.ylabel('Y')
+plt.legend()
+plt.grid(True)
+plt.axis('equal')
+plt.savefig('random_walks.png')
+print("Exercise 3 completed: Random walks plot saved")
+
+
+# Exercise 3: Define dehorning count function
+def dehornings(observations: list[str]) -> int:
+    """
+    Count the number of times a rhino was dehorned.
+    Dehorning is counted when status changes to "Dehorned"
+    
+    Args:
+        observations: List of horn statuses in chronological order
+        
+    Returns:
+        Number of dehorning events
+        
+    Examples:
+    >>> dehornings(["Horned", "Horned", "Dehorned"])
+    1
+    >>> dehornings(["Dehorned", "Dehorned", "Dehorned"])
+    1
+    >>> dehornings(["Horned", "Horned", "Horned", "Horned"])
+    0
+    >>> dehornings(["Dehorned", "Horned", "Dehorned"])
+    2
+    """
+    count = 0
+    prev_status = None
+    
+    for status in observations:
+        # Count transition to "Dehorned" state
+        if status == "Dehorned" and (prev_status != "Dehorned" or prev_status is None):
+            count += 1
+        prev_status = status
+    
+    return count
+
+# Run doctests for dehornings function
+import doctest
+doctest.testmod()
+print("Exercise 3 completed: dehornings function defined and tested")
+
+# Exercise 3: Define triplet sum function
+def sum_triplets(series: Series) -> Series:
+    """
+    Compute sums of subsequent triplets of values in a pandas Series.
+    
+    Args:
+        series: Input pandas Series of integers
+        
+    Returns:
+        New Series with sums of triplets
+        
+    Examples:
+    >>> s = pd.Series([1, 2, 3, 4, 5])
+    >>> sum_triplets(s)
+    0     6
+    1     9
+    dtype: int64
+    
+    >>> s = pd.Series([10, 20, 30, 40, 50, 60])
+    >>> sum_triplets(s)
+    0     60
+    1     90
+    2    120
+    dtype: int64
+    """
+    # 将Series转换为numpy数组
+    arr = series.values
+    # 计算可以形成的三元组数量
+    n_triplets = len(arr) // 3
+    # 使用步进切片计算三元组和
+    return pd.Series([arr[i*3] + arr[i*3+1] + arr[i*3+2] for i in range(n_triplets)])
+
+# Run doctests
+import doctest
+doctest.testmod()
+print("Exercise 3 completed: triplet sum function defined and tested")
+
+
+
+
