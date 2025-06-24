@@ -1,0 +1,184 @@
+ 练习2: 生成唯一的双联体对（三联体及其反向）
+# =============================================================================
+def generate_unique_triplets(genome: str) -> Set[str]:
+    """
+    生成唯一的三联体表示集合，其中每个三联体及其反向
+    使用字典序较小的版本表示
+    
+    参数:
+        genome: 基因组序列字符串
+        
+    返回:
+        唯一三联体表示的集合
+    """
+    # 从基因组中获取唯一的核苷酸
+    nucleotides = set(genome)
+    
+    # 生成所有可能的三联体
+    triplets = set()
+    for a in nucleotides:
+        for b in nucleotides:
+            for c in nucleotides:
+                triplet = a + b + c
+                reverse = triplet[::-1]  # 反转三联体
+                
+                # 存储字典序较小的版本
+                triplets.add(min(triplet, reverse))
+    
+    return triplets
+
+# 生成潜在三联体
+potential_triplets = generate_unique_triplets(genome)
+
+# =============================================================================
+# Exercise 2: Add sampling_place column
+# =============================================================================
+# 提取Sample_ID的最后一个单词作为采样地点
+df['sampling_place'] = df['Sample_ID'].str.split().str[-1]
+
+# =============================================================================
+
+# Exercise 2: Add Species column
+# =============================================================================
+# 定义物种编码到拉丁名的映射字典
+species_map = {
+    '1': 'Anas platyrhynchos domesticus',
+    '2': 'Anser cygnoides domesticus',
+    '3': 'Coturnix japonica domesticus',
+    '4': 'Gallus gallus domesticus',
+    '5': 'Alectoris chukar domesticus',
+    '7': 'Phasianus colchicus domesticus'
+}
+
+# 从Image列提取物种编码
+df['species_code'] = df['Image'].str.split('-').str[0]
+
+# 根据物种编码添加拉丁名
+df['Species'] = df['species_code'].map(species_map)
+
+# =============================================================================
+# Exercise 2: Add Location column
+# =============================================================================
+# 定义地点缩写到完整名称的映射字典
+location_map = {
+    'TB': 'Tilton Bridge',
+    'PB': 'Pocket Branch',
+    'OM': 'Old Mine',
+    'CA': 'Cave',
+    'WF': 'WhiteWater Falls',
+    'BR': 'Boat Ramp',
+    'JG': 'Jocassee Gorges'
+}
+
+# 添加Location列
+df['Location'] = df['Site'].map(location_map)
+
+
+# ### Exercise 2: 验证数据一致性
+# 检查每个pet_id对应的breeds、weight、age是否完全一致
+print("\nExercise 2: 正在验证数据一致性...")
+# 按pet_id分组，检查每个分组内breeds、weight、age的唯一值数量是否为1
+grouped = dogs_df.groupby('pet_id')[['breeds', 'weight', 'age']]
+for pet_id, group in grouped:
+    # 如果某个分组内这些列有多个不同值，则抛出断言错误
+    assert group['breeds'].nunique() == 1, f"pet_id {pet_id} 的breeds不一致"
+    assert group['weight'].nunique() == 1, f"pet_id {pet_id} 的weight不一致"
+    assert group['age'].nunique() == 1, f"pet_id {pet_id} 的age不一致"
+print("数据一致性验证通过：每个pet_id的breeds、weight、age完全一致")
+
+# =============================================================================
+
+# Exercise 2: 添加采样地点列
+# 提取Sample_ID的最后一个单词作为采样地点
+df['sampling_place'] = df['Sample_ID'].str.split().str[-1]
+print("Exercise 2 completed: Sampling place column added")
+
+
+# Exercise 2: Add age column (in weeks)
+# 添加年龄列（以周为单位）
+rhinos_df['Age'] = (rhinos_df['Date'] - rhinos_df['DateBorn']).dt.days // 7
+
+
+# Exercise 2: Add parent column
+# 添加parent列，存储随机选择的父母行索引
+df['parent'] = -1  # 默认值-1表示没有父母
+
+# 遍历每一行数据
+for idx, row in df.iterrows():
+    # 计算父母的年龄范围
+    min_age = row['age'] + 15
+    max_age = row['age'] + 50
+    
+    # 筛选符合条件的潜在父母
+    potential_parents = df[
+        (df['age'] >= min_age) & 
+        (df['age'] <= max_age) & 
+        (df.index != idx)  # 排除自己
+    ]
+    
+    # 如果有符合条件的父母，随机选择一个
+    if not potential_parents.empty:
+        df.loc[idx, 'parent'] = np.random.choice(potential_parents.index)
+
+# Exercise 2: Compute 5 random walks on the grid
+# 定义网格上的随机行走函数
+def random_walk(start_pos: tuple, steps: int) -> np.ndarray:
+    """
+    在51x51网格上执行随机行走
+    
+    参数:
+        start_pos: 起始位置 (x, y)
+        steps: 步数
+        
+    返回:
+        行走路径的坐标数组
+    """
+    # 可能的移动方向：水平、垂直、对角线（8个方向）
+    directions = [
+        (0, 1), (1, 0), (0, -1), (-1, 0),  # 基本方向
+        (1, 1), (1, -1), (-1, 1), (-1, -1)  # 对角线
+    ]
+    
+    path = np.zeros((steps + 1, 2))
+    path[0] = start_pos
+    
+    for i in range(1, steps + 1):
+        dx, dy = directions[np.random.randint(0, len(directions))]
+        new_x = (path[i-1, 0] + dx) % 51  # 环形边界处理
+        new_y = (path[i-1, 1] + dy) % 51  # 环形边界处理
+        path[i] = [new_x, new_y]
+    
+    return path
+
+# 从中心点(25,25)开始5个随机行走
+center = (25, 25)
+walks = [random_walk(center, 50) for _ in range(5)]
+print("Exercise 2 completed: 5 random walks computed")
+
+# Exercise 2: Add age column (in weeks)
+# 添加年龄列（以周为单位）
+rhinos_df['Age'] = (rhinos_df['Date'] - rhinos_df['DateBorn']).dt.days // 7
+print("Exercise 2 completed: Age column added")
+
+# Exercise 2: Compute samples by type
+# 计算按类型分布的样本数量
+# 初始化scat和stomach样本数量
+scat_samples = 0
+stomach_samples = 0
+
+# 处理不同类型的数据
+for idx, row in birds.iterrows():
+    if row['type'] in ['scat', 'stomach']:
+        if row['type'] == 'scat':
+            scat_samples += row['samples']
+        else:
+            stomach_samples += row['samples']
+    elif row['type'] in ['both (not stated)', 'scat & stomach']:
+        # 使用p_scat分配样本
+        scat_samples += row['samples'] * row['p_scat']
+        stomach_samples += row['samples'] * (1 - row['p_scat'])
+
+print(f"Exercise 2 completed: Scat samples = {scat_samples:.2f}, Stomach samples = {stomach_samples:.2f}")
+
+
+
