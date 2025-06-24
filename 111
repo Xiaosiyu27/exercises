@@ -1,0 +1,118 @@
+# 练习1: 读取FASTA文件并将基因组存储为字符串
+# =============================================================================
+def read_fasta(filename: str) -> str:
+    """
+    读取FASTA文件并返回基因组序列作为单个字符串
+    
+    参数:
+        filename: FASTA文件路径
+        
+    返回:
+        基因组序列（连续字符串）
+    """
+    genome = ""
+    with open(filename, 'r') as file:
+        for line in file:
+            # 跳过以'>'开头的注释行
+            if not line.startswith('>'):  
+                # 移除行尾空白并转换为大写保证一致性
+                genome += line.strip().upper()  
+    return genome
+
+# 读取基因组数据
+genome = read_fasta('nc_051526_1.fasta')
+
+# =============================================================================
+
+# Exercise 1: Load data with MouseID as index
+# =============================================================================
+# 读取CSV文件，使用逗号分隔，指定MouseID列为索引
+df = pd.read_csv('mice.csv', sep=',', index_col='MouseID')
+
+# =============================================================================
+
+# Exercise 1: Load data with correct date parsing
+# =============================================================================
+# 读取CSV文件并正确解析日期列
+# 使用自定义日期格式确保正确解析出生日期和采样日期
+df = pd.read_csv('brown_bear_blood.csv', 
+                 parse_dates=['Birth date', 'Date of the blood sampling'],
+                 date_parser=lambda x: pd.to_datetime(x, format='%Y/%m/%d'))
+
+# 确保日期列类型为datetime64[ns]
+df['Birth date'] = pd.to_datetime(df['Birth date'])
+df['Date of the blood sampling'] = pd.to_datetime(df['Date of the blood sampling'])
+
+# =============================================================================
+
+# Exercise 1: Load the dataset
+# =============================================================================
+# 读取CSV文件
+df = pd.read_csv('EPE.csv')
+
+# =============================================================================
+
+# Exercise 1: Load the dataset
+# =============================================================================
+# 读取CSV文件
+df = pd.read_csv('trillium.csv')
+
+# =============================================================================
+
+
+# ### Exercise 1: 加载数据
+# 读取dogs.csv文件，将第一列作为索引
+dogs_df = pd.read_csv('dogs.csv', index_col=0)
+print("Exercise 1 完成：数据加载成功，前5行：")
+print(dogs_df.head())
+
+# Exercise 1: 加载数据并正确解析日期列
+# 使用parse_dates参数指定日期列，date_format指定日期格式
+df = pd.read_csv('brown_bear_blood.csv', 
+                 parse_dates=['birth', 'sampling_date'],
+                 date_format='%Y/%m/%d')
+print("Exercise 1 completed: Data loaded successfully")
+
+
+# Exercise 1: Load data and parse date columns
+# 加载数据并将日期列解析为datetime类型
+rhinos_df = pd.read_csv('rhinos.csv', 
+                        parse_dates=['Date', 'DateBorn'],
+                        date_format='%d/%m/%Y')
+
+# Exercise 1: Load the data
+# 加载Howell1.csv数据集
+df = pd.read_csv('Howell1.csv')
+
+# Exercise 1: Plot a 51x51 grid of dots
+# 创建51x51的二维网格点阵
+plt.figure(figsize=(8, 8))
+x = np.arange(0, 51)
+y = np.arange(0, 51)
+X, Y = np.meshgrid(x, y)
+plt.scatter(X, Y, s=1, c='blue')
+plt.title('51x51 Grid of Dots')
+plt.axis('equal')
+plt.grid(False)
+plt.savefig('grid.png')
+print("Exercise 1 completed: Grid plot saved as grid.png")
+
+# Exercise 1: Load the rhino data with proper date parsing
+# 加载犀牛数据，正确解析日期列
+rhinos_df = pd.read_csv('rhinos.csv', 
+                        parse_dates=['Date', 'DateBorn'],
+                        date_format='%d/%m/%Y')
+print("Exercise 1 completed: Data loaded with datetime columns")
+
+# Exercise 1: Load the bird data with ID as index
+# 加载鸟类数据集，使用ID列作为索引
+birds = pd.read_csv('bird_foo_data.csv', index_col='ID')
+print("Exercise 1 completed: Bird dataset loaded with ID as index")
+
+
+
+
+
+
+
+
