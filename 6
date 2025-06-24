@@ -1,0 +1,239 @@
+# 练习6: 标准化值的直方图
+# =============================================================================
+plt.figure(figsize=(10, 6))
+# 创建从-3到3的bin（步长0.5）
+bins = np.arange(-3, 3.1, 0.5)  
+plt.hist(df['std_num'], bins=bins, edgecolor='black', alpha=0.7)
+
+# 添加均值线（标准化后的均值始终为0）
+plt.axvline(0, color='red', linestyle='dashed', linewidth=2, label='均值')
+
+plt.title('标准化三联体出现次数的分布')
+plt.xlabel('标准化出现次数')
+plt.ylabel('频率')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.show()
+
+# Exercise 6: Add NR_evodd column
+# =============================================================================
+# 将两列拼接为字符串并应用函数（避免显式循环）
+df['NR_evodd'] = (df['NR1_N'].astype(str) + df['NR2A_N'].astype(str)
+df['NR_evodd'] = df['NR_evodd'].apply(lambda x: evodd_digits(float(x), True))
+
+# =============================================================================
+# Exercise 6: Combined histograms for sex/environment
+# =============================================================================
+plt.figure(figsize=(12, 8))
+
+# 定义四种性别与环境的组合
+combinations = [
+    ('M', 'captive'),   # 雄性圈养
+    ('M', 'wild'),      # 雄性野生
+    ('F', 'captive'),   # 雌性圈养
+    ('F', 'wild')       # 雌性野生
+]
+
+# 为每组组合绘制直方图
+colors = ['skyblue', 'salmon', 'lightgreen', 'gold']
+labels = ['Male Captive', 'Male Wild', 'Female Captive', 'Female Wild']
+
+for i, (sex, env) in enumerate(combinations):
+    subset = df[(df['Sex'] == sex) & (df['Growth environment'] == env)]
+    plt.hist(subset['age_years'], bins=15, alpha=0.7, 
+             color=colors[i], label=labels[i], edgecolor='black')
+
+plt.title('Age Distribution by Sex and Environment')
+plt.xlabel('Age (years)')
+plt.ylabel('Count')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+# =============================================================================
+
+# Exercise 6: Histograms of scan.area by species
+# =============================================================================
+plt.figure(figsize=(12, 8))
+
+# 获取所有物种
+species_list = df['Species'].unique()
+
+# 为每个物种绘制直方图
+for species in species_list:
+    subset = df[df['Species'] == species]
+    plt.hist(subset['scan.area'], bins=30, alpha=0.7, 
+             label=species, edgecolor='black')
+
+plt.title('Egg Scan Area Distribution by Species')
+plt.xlabel('Scan Area (cm²)')
+plt.ylabel('Frequency')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+# =============================================================================
+
+# Exercise 6: Histograms of Citrulline by Location
+# =============================================================================
+plt.figure(figsize=(12, 8))
+
+# 获取所有地点
+locations = df['Location'].unique()
+
+# 为每个地点绘制直方图
+for location in locations:
+    subset = df[df['Location'] == location]
+    plt.hist(subset['Citrulline'], bins=15, alpha=0.7, 
+             label=location, edgecolor='black')
+
+plt.title('Citrulline分布按收集地点')
+plt.xlabel('Citrulline值')
+plt.ylabel('频率')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+# =============================================================================
+
+# ### Exercise 6: 绘制狗32的ECG间隔图
+print("\nExercise 6: 绘制狗32的ECG间隔图...")
+dog_32 = dogs_df[dogs_df['pet_id'] == 32]
+plt.figure(figsize=(12, 6))
+
+# 遍历每条记录
+for idx, row in dog_32.iterrows():
+    # 解析ECG脉冲时间点
+    pulses = list(map(float, row['ecg_pulses'].split(',')))
+    # 计算时间间隔
+    intervals = deltas(pulses, row['duration'])
+    # 计算累计时间（X轴位置）
+    cumulative_times = np.cumsum(intervals[:-1])
+    # 绘制间隔线（不包括最后一段）
+    plt.plot(cumulative_times, intervals[:-1], 'o-', label=f"记录 {idx}")
+
+plt.xlabel('记录时间 (秒)')
+plt.ylabel('时间间隔 (秒)')
+plt.title('狗32的ECG脉冲间隔')
+plt.legend()
+plt.tight_layout()
+plt.savefig('dog_32_ecg_deltas.png')
+print("间隔图已保存为 dog_32_ecg_deltas.png")
+
+# Exercise 6: 绘制性别和环境的年龄分布直方图
+plt.figure(figsize=(12, 8))
+
+# 定义分组条件
+conditions = [
+    (df['sex'] == 'M') & (df['environment'] == 'captive'),
+    (df['sex'] == 'M') & (df['environment'] == 'wild'),
+    (df['sex'] == 'F') & (df['environment'] == 'captive'),
+    (df['sex'] == 'F') & (df['environment'] == 'wild')
+]
+labels = ['Male-Captive', 'Male-Wild', 'Female-Captive', 'Female-Wild']
+colors = ['blue', 'lightblue', 'red', 'pink']
+
+# 绘制直方图
+for i, cond in enumerate(conditions):
+    subset = df[cond]['age_years']
+    plt.hist(subset, bins=15, alpha=0.7, label=labels[i], color=colors[i])
+
+plt.xlabel('Age (years)')
+plt.ylabel('Count')
+plt.title('Age Distribution by Sex and Environment')
+plt.legend()
+plt.grid(True, linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.savefig('age_distribution.png')
+print("Exercise 6 completed: Histograms saved as age_distribution.png")
+
+# Exercise 6: Plot histogram of rhino observations per reserve
+# 绘制每个保护区的犀牛观察数量直方图
+plt.figure(figsize=(10, 6))
+rhinos_df['Reserve'].value_counts().plot(kind='bar', color='skyblue')
+plt.title('Rhino Observations per Reserve')
+plt.xlabel('Reserve')
+plt.ylabel('Number of Observations')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig('reserve_counts.png')
+
+# Exercise 6: Height comparison for same-sex parent-child pairs
+# 绘制同性别父母与子女身高比较图
+same_sex = df[df['parent'] != -1].copy()
+same_sex['parent_sex'] = df.loc[same_sex['parent']]['male'].values
+
+# 筛选同性别组合
+same_sex = same_sex[same_sex['male'] == same_sex['parent_sex']]
+
+plt.figure(figsize=(10, 6))
+# 绘制男性数据点
+male_pairs = same_sex[same_sex['male'] == 1]
+plt.scatter(
+    df.loc[male_pairs['parent']]['height'], 
+    male_pairs['height'], 
+    c='blue', alpha=0.6, label='Male'
+)
+
+# 绘制女性数据点
+female_pairs = same_sex[same_sex['male'] == 0]
+plt.scatter(
+    df.loc[female_pairs['parent']]['height'], 
+    female_pairs['height'], 
+    c='red', alpha=0.6, label='Female'
+)
+
+plt.xlabel("Parent's Height (cm)")
+plt.ylabel("Child's Height (cm)")
+plt.title('Parent vs Child Height (Same Sex)')
+plt.legend()
+plt.grid(True, linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.savefig('same_sex_height_comparison.png')
+
+
+# Exercise 6: Add ratio columns
+# 添加花瓣宽度/花萼宽度和花瓣长度/花萼长度比率列
+iris['width_ratio'] = iris['petal_width'] / iris['sepal_width']
+iris['length_ratio'] = iris['petal_length'] / iris['sepal_length']
+print("Exercise 6 completed: Ratio columns added")
+
+
+# Exercise 6: Plot histogram of rhino observations per reserve
+# 绘制每个保护区的犀牛观察数量直方图
+plt.figure(figsize=(10, 6))
+rhinos_df['Reserve'].value_counts().plot(kind='bar', color='skyblue')
+plt.title('Number of Rhino Observations per Reserve')
+plt.xlabel('Reserve')
+plt.ylabel('Number of Observations')
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig('reserve_observations.png')
+print("Exercise 6 completed: Histogram saved as reserve_observations.png")
+
+# Exercise 6: Add standardized total_in column and plot histogram
+# 添加标准化total_in列
+if 'total_in' in birds_expanded.columns:
+    total_in = birds_expanded['total_in'].dropna()
+    mean_val = total_in.mean()
+    std_val = total_in.std()
+    birds_expanded['std_total_in'] = (birds_expanded['total_in'] - mean_val) / std_val
+    
+    # 绘制密度直方图
+    plt.figure(figsize=(10, 6))
+    sns.histplot(birds_expanded['std_total_in'].dropna(), kde=True, bins=20)
+    plt.title('Standardized total_in Distribution')
+    plt.xlabel('Standardized total_in')
+    plt.ylabel('Density')
+    plt.tight_layout()
+    plt.savefig('std_total_in_hist.png')
+    print("Exercise 6 completed: Standardized histogram saved")
+else:
+    print("Exercise 6 skipped: 'total_in' column not found")
+
+
+
+
