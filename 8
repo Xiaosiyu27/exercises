@@ -1,0 +1,355 @@
+# 练习8: 使用PyMC进行贝叶斯建模
+# =============================================================================
+# 准备数据
+even_std = df[df['even']]['std_num'].values
+odd_std = df[~df['even']]['std_num'].values
+
+with pm.Model() as model:
+    # 先验分布
+    # 偶数组的均值（正态分布先验）
+    mean_even = pm.Normal('mean_even', mu=0, sigma=2)
+    # 奇数组的均值（正态分布先验）
+    mean_odd = pm.Normal('mean_odd', mu=0, sigma=2)
+    
+    # 标准差（指数分布先验）
+    sigma_even = pm.Exponential('sigma_even', lam=1)
+    sigma_odd = pm.Exponential('sigma_odd', lam=1)
+    
+    # 似然函数
+    # 假设偶数组的数据服从正态分布
+    pm.Normal('even_obs', mu=mean_even, sigma=sigma_even, observed=even_std)
+    # 假设奇数组的数据服从正态分布
+    pm.Normal('odd_obs', mu=mean_odd, sigma=sigma_odd, observed=odd_std)
+    
+    # 采样
+    trace = pm.sample(2000, tune=1000, cores=2, return_inferencedata=True)
+
+# 绘制后验分布图
+az.plot_posterior(trace, var_names=['mean_even', 'mean_odd', 'sigma_even', 'sigma_odd'])
+plt.suptitle('后验分布', fontsize=16)
+plt.tight_layout()
+plt.show()
+
+# Exercise 8: Bayesian modeling with PyMC
+# =============================================================================
+# 准备观测数据
+M = subset['Bcatenin_N_std'].values
+T = subset['Tau_N_std'].values
+
+with pm.Model() as model:
+    # 先验分布
+    alpha = pm.Normal('alpha', mu=0, sigma=0.2)
+    beta = pm.Normal('beta', mu=0, sigma=0.5)
+    gamma = pm.Exponential('gamma', lam=1)
+    
+    # 均值函数
+    mu = alpha + beta * M
+    
+    # 似然函数
+    tau_obs = pm.Normal('tau_obs', mu=mu, sigma=gamma, observed=T)
+    
+    # MCMC采样
+    trace = pm.sample(2000, tune=1000, cores=2, return_inferencedata=True)
+
+# 输出模型摘要
+summary = az.summary(trace)
+print(summary)
+
+# 绘制后验分布图
+az.plot_posterior(trace, var_names=['alpha', 'beta', 'gamma'])
+plt.suptitle('Posterior Distributions', fontsize=16)
+plt.tight_layout()
+plt.show()
+
+# Exercise 8: Bayesian modeling with PyMC
+# =============================================================================
+# 准备观测数据
+age = df['age_years'].values
+scgn = df['SCGN'].values
+
+with pm.Model() as model:
+    # 先验分布
+    alpha = pm.Normal('alpha', mu=0, sigma=1)
+    beta = pm.Normal('beta', mu=1, sigma=1)
+    gamma = pm.Exponential('gamma', lam=1)
+    
+    # 均值函数
+    mu = alpha + beta * scgn
+    
+    # 似然函数
+    age_obs = pm.Normal('age_obs', mu=mu, sigma=gamma, observed=age)
+    
+    # MCMC采样
+    trace = pm.sample(2000, tune=1000, cores=2, return_inferencedata=True)
+
+# 绘制后验分布图
+az.plot_posterior(trace, var_names=['alpha', 'beta', 'gamma'])
+plt.suptitle('Posterior Distributions', fontsize=16)
+plt.tight_layout()
+plt.show()
+
+# Exercise 8: Bayesian modeling with PyMC
+# =============================================================================
+# 筛选同时具有蛋黄和蛋白数据的数据点
+valid_df = df.dropna(subset=['Yolk', 'Albumen'])
+
+# 准备观测数据
+V = valid_df['volume'].values
+W = valid_df['yolk_albumen'].values  # 蛋黄+蛋白总质量
+
+with pm.Model() as model:
+    # 先验分布
+    alpha = pm.Normal('alpha', mu=0, sigma=3)
+    beta = pm.Normal('beta', mu=0, sigma=3)
+    gamma = pm.Exponential('gamma', lam=1)
+    
+    # 均值函数
+    mu = alpha + beta * V
+    
+    # 似然函数
+    weight_obs = pm.Normal('weight_obs', mu=mu, sigma=gamma, observed=W)
+    
+    # MCMC采样
+    trace = pm.sample(2000, tune=1000, cores=2, return_inferencedata=True)
+
+# 绘制后验分布图
+az.plot_posterior(trace, var_names=['alpha', 'beta', 'gamma'])
+plt.suptitle('Posterior Distributions', fontsize=16)
+plt.tight_layout()
+plt.show()
+
+# Exercise 8: Bayesian modeling with PyMC
+# =============================================================================
+# 准备观测数据
+S = df['S-Adenosyl-L-methioninamine'].values
+C = df['Citrulline'].values
+
+with pm.Model() as model:
+    # 先验分布
+    alpha = pm.Normal('alpha', mu=0, sigma=1)
+    beta = pm.Normal('beta', mu=1, sigma=1)
+    gamma = pm.Exponential('gamma', lam=1)
+    
+    # 均值函数
+    mu = alpha + beta * S
+    
+    # 似然函数
+    citrulline_obs = pm.Normal('citrulline_obs', mu=mu, sigma=gamma, observed=C)
+    
+    # MCMC采样
+    trace = pm.sample(2000, tune=1000, cores=2, return_inferencedata=True)
+
+# 绘制后验分布图
+az.plot_posterior(trace, var_names=['alpha', 'beta', 'gamma'])
+plt.suptitle('后验分布', fontsize=16)
+plt.tight_layout()
+plt.show()
+
+# ### Exercise 8: 贝叶斯建模
+print("\nExercise 8: 进行贝叶斯建模...")
+# 过滤掉缺失值
+valid_obs = obs.dropna(subset=['max_mean_ecg_delta'])
+
+with pm.Model() as ecg_model:
+    # 参数先验分布
+    alpha = pm.Normal('alpha', mu=0, sigma=1)        # 截距项
+    beta = pm.Normal('beta', mu=1, sigma=1)          # 体重系数
+    gamma = pm.Exponential('gamma', lam=1)           # 标准差参数
+    
+    # 线性模型：平均ECG间隔 = α + β * 体重
+    mu = alpha + beta * valid_obs['weight'].values
+    
+    # 似然函数：观测值服从正态分布
+    y_obs = pm.Normal('y_obs', 
+                      mu=mu, 
+                      sigma=gamma, 
+                      observed=valid_obs['max_mean_ecg_delta'].values)
+    
+    # MCMC采样
+    trace = pm.sample(2000, tune=1000, chains=2, cores=2)
+
+# 绘制后验分布
+az.plot_posterior(trace, var_names=['alpha', 'beta', 'gamma'])
+plt.suptitle('模型参数后验分布', fontsize=16)
+plt.tight_layout()
+plt.savefig('bayesian_posterior.png')
+print("贝叶斯建模完成，后验分布图已保存为 bayesian_posterior.png")
+
+# 显示所有图形
+plt.show()
+
+# Exercise 8: 贝叶斯建模
+# 准备数据
+age = df['age_years'].values
+scgn = df['SCGN'].values
+
+with pm.Model() as age_model:
+    # 先验分布
+    alpha = pm.Normal('alpha', mu=0, sigma=1)
+    beta = pm.Normal('beta', mu=1, sigma=1)
+    gamma = pm.Exponential('gamma', lam=1)
+    
+    # 线性模型: 年龄 = α + β * SCGN
+    mu = alpha + beta * scgn
+    
+    # 似然函数
+    y_obs = pm.Normal('y_obs', mu=mu, sigma=gamma, observed=age)
+    
+    # MCMC采样
+    trace = pm.sample(2000, tune=1000, chains=2, cores=2)
+
+# 绘制后验分布
+az.plot_posterior(trace, var_names=['alpha', 'beta', 'gamma'])
+plt.suptitle('Posterior Distributions of Model Parameters', fontsize=16)
+plt.tight_layout()
+plt.savefig('bayesian_posterior.png')
+print("Exercise 8 completed: Bayesian model created and posterior distributions saved")
+
+# 显示所有图形
+plt.show()
+
+# Exercise 8: Bayesian modeling
+# 准备建模数据
+# 1. 计算每个保护区的唯一犀牛数量
+reserve_n_rhinos = rhinos_df.groupby('Reserve')['RhinosAtSighting'].nunique()
+
+# 2. 计算每个保护区的平均去角观察比例
+rhinos_df['is_dehorned'] = rhinos_df['Horn'] == 'Dehorned'
+reserve_dehorn_mean = rhinos_df.groupby('Reserve')['is_dehorned'].mean()
+
+# 确保两个Series索引一致
+reserve_data = pd.DataFrame({
+    'n_rhinos': reserve_n_rhinos,
+    'dehorn_mean': reserve_dehorn_mean
+}).dropna()
+
+# 提取建模所需数组
+N = reserve_data['n_rhinos'].values
+Y = reserve_data['dehorn_mean'].values
+
+# Build Bayesian model
+# 构建贝叶斯模型
+with pm.Model() as dehorn_model:
+    # Priors 先验分布
+    alpha = pm.Normal('alpha', mu=0, sigma=2)
+    beta = pm.Normal('beta', mu=0, sigma=2)
+    sigma = pm.Exponential('sigma', lam=1)
+    
+    # Linear model 线性模型
+    mu = alpha + beta * N
+    
+    # Likelihood 似然函数
+    y_obs = pm.Normal('y_obs', mu=mu, sigma=sigma, observed=Y)
+    
+    # MCMC sampling MCMC采样
+    trace = pm.sample(2000, tune=1000, chains=2, cores=2)
+
+# Plot posterior distributions
+# 绘制后验分布图
+az.plot_posterior(trace, var_names=['alpha', 'beta', 'sigma'])
+plt.suptitle('Posterior Distributions of Model Parameters', fontsize=16)
+plt.tight_layout()
+plt.savefig('dehorn_posterior.png')
+
+# Show all plots
+# 显示所有图形
+plt.show()
+
+# Exercise 8: Bayesian modeling of height inheritance
+# 构建身高遗传的贝叶斯模型
+# 准备数据
+valid_children = df[df['parent'] != -1]
+child_height = valid_children['height'].values
+parent_height = df.loc[valid_children['parent']]['height'].values
+
+with pm.Model() as height_model:
+    # Priors 先验分布
+    alpha = pm.Normal('alpha', mu=0, sigma=5)
+    beta = pm.Normal('beta', mu=0, sigma=5)
+    sigma = pm.Exponential('sigma', lam=1)
+    
+    # Linear model 线性模型
+    mu = alpha + beta * parent_height
+    
+    # Likelihood 似然函数
+    y_obs = pm.Normal('y_obs', mu=mu, sigma=sigma, observed=child_height)
+    
+    # MCMC sampling MCMC采样
+    trace = pm.sample(2000, tune=1000,
+
+    # Exercise 8: Bayesian modeling for Iris-setosa sepal width
+# 对Iris-setosa的花萼宽度进行贝叶斯建模
+setosa_data = iris[iris['species'] == 'setosa']['sepal_width'].values
+
+with pm.Model() as setosa_model:
+    # Priors 先验分布
+    mu = pm.Exponential('mu', lam=1)
+    sigma = pm.Exponential('sigma', lam=1)
+    
+    # Likelihood 似然函数
+    y_obs = pm.Normal('y_obs', mu=mu, sigma=sigma, observed=setosa_data)
+    
+    # MCMC sampling MCMC采样
+    trace = pm.sample(2000, tune=1000, chains=2, cores=2)
+
+# Plot posterior distributions 绘制后验分布
+az.plot_posterior(trace, var_names=['mu', 'sigma'])
+plt.suptitle('Posterior Distributions for Iris-setosa Sepal Width', fontsize=16)
+plt.tight_layout()
+plt.savefig('setosa_posterior.png')
+
+# Print observed mean and standard deviation 打印观测样本的统计量
+obs_mean = setosa_data.mean()
+obs_std = setosa_data.std()
+print(f"Exercise 8 completed: Observed mean = {obs_mean:.2f}, std = {obs_std:.2f}")
+
+# Show all plots 显示所有图形
+plt.show()
+
+# Exercise 8: Bayesian modeling
+# 准备建模数据
+# 1. 计算每个保护区的唯一犀牛数量
+reserve_n_rhinos = rhinos_df.groupby('Reserve')['RhinosAtSighting'].nunique()
+
+# 2. 计算每个保护区的平均去角观察比例
+rhinos_df['is_dehorned'] = rhinos_df['Horn'] == 'Dehorned'
+reserve_dehorn_mean = rhinos_df.groupby('Reserve')['is_dehorned'].mean()
+
+# 合并数据并移除缺失值
+reserve_data = pd.DataFrame({
+    'n_rhinos': reserve_n_rhinos,
+    'dehorn_mean': reserve_dehorn_mean
+}).dropna()
+
+# 提取建模所需数组
+N = reserve_data['n_rhinos'].values
+Y = reserve_data['dehorn_mean'].values
+
+# Build Bayesian model
+# 构建贝叶斯模型
+with pm.Model() as dehorn_model:
+    # Priors 先验分布
+    alpha = pm.Normal('alpha', mu=0, sigma=2)
+    beta = pm.Normal('beta', mu=0, sigma=2)
+    sigma = pm.Exponential('sigma', lam=1)
+    
+    # Linear model 线性模型: 平均去角比例 = α + β * 犀牛数量
+    mu = alpha + beta * N
+    
+    # Likelihood 似然函数
+    y_obs = pm.Normal('y_obs', mu=mu, sigma=sigma, observed=Y)
+    
+    # MCMC sampling MCMC采样
+    trace = pm.sample(2000, tune=1000, chains=2, cores=2)
+
+# Plot posterior distributions 绘制后验分布图
+az.plot_posterior(trace, var_names=['alpha', 'beta', 'sigma'])
+plt.suptitle('Posterior Distributions of Dehorning Model Parameters', fontsize=16)
+plt.tight_layout()
+plt.savefig('dehorn_posterior.png')
+print("Exercise 8 completed: Bayesian model created and posterior distributions saved")
+
+# Show all plots 显示所有图形
+plt.show()
+
+
