@@ -1,0 +1,258 @@
+# 练习4: 创建包含三联体计数的DataFrame
+# =============================================================================
+# 初始化计数字典
+triplet_counts = {}
+
+# 为每个唯一三联体表示计数出现次数
+for triplet in potential_triplets:
+    count = count_triplet_occurrences(genome, triplet)
+    triplet_counts[triplet] = count
+
+# 创建DataFrame
+df = pd.DataFrame.from_dict(triplet_counts, orient='index', columns=['occurrences'])
+df.index.name = 'triplet'
+
+# 添加'even'列表示出现次数是否为偶数
+df['even'] = df['occurrences'] % 2 == 0
+
+# =============================================================================
+# Exercise 4: Histograms for all 'p'-prefixed proteins
+# =============================================================================
+# 找出所有以'p'开头的蛋白质列
+p_columns = [col for col in df.columns if col.startswith('p')]
+
+# 创建大尺寸图形（22行2列）
+fig, axes = plt.subplots(len(p_columns), 2, figsize=(5, 3*len(p_columns)))
+
+# 为每个蛋白质绘制分组直方图
+for i, protein in enumerate(p_columns):
+    # 第一列：按基因型分组
+    for genotype in df['Genotype'].unique():
+        subset = df[df['Genotype'] == genotype]
+        axes[i, 0].hist(subset[protein], bins=20, alpha=0.7, 
+                       density=True, label=genotype, edgecolor='black')
+    
+    axes[i, 0].set_title(f'{protein} - Genotype')
+    axes[i, 0].set_ylabel('Density')
+    axes[i, 0].legend()
+    axes[i, 0].grid(True, alpha=0.3)
+    
+    # 第二列：按治疗分组
+    for treatment in df['Treatment'].unique():
+        subset = df[df['Treatment'] == treatment]
+        axes[i, 1].hist(subset[protein], bins=20, alpha=0.7, 
+                       density=True, label=treatment, edgecolor='black')
+    
+    axes[i, 1].set_title(f'{protein} - Treatment')
+    axes[i, 1].legend()
+    axes[i, 1].grid(True, alpha=0.3)
+
+plt.suptitle('Protein Expression Distribution (p-prefixed)', fontsize=16)
+plt.tight_layout()
+plt.subplots_adjust(top=0.95)
+plt.show()
+
+# =============================================================================
+# Exercise 4: Apply oddity to male/female age series
+# =============================================================================
+# 创建男性熊的年龄序列（按年龄排序并重置索引）
+male_ages = df[df['Sex'] == 'M'].sort_values('age_years')['age_years'].reset_index(drop=True)
+male_oddity = oddity(male_ages)
+
+# 创建女性熊的年龄序列（按年龄排序并重置索引）
+female_ages = df[df['Sex'] == 'F'].sort_values('age_years')['age_years'].reset_index(drop=True)
+female_oddity = oddity(female_ages)
+
+# =============================================================================
+# Exercise 4: Calculate third axis (x)
+# =============================================================================
+# 根据公式 scan.area = π * (scan.width/2) * (x/2) 推导 x
+# 公式变形: x = (4 * scan.area) / (π * scan.width)
+df['x'] = (4 * df['scan.area']) / (math.pi * df['scan.width'])
+
+# =============================================================================
+
+# Exercise 4: Apply averages to Citrulline at Tilton Bridge
+# =============================================================================
+# 筛选TB地点的Citrulline数据
+tb_citrulline = df[df['Site'] == 'TB']['Citrulline'].tolist()
+
+# 应用averages函数
+tb_avg = averages(tb_citrulline)
+
+# 打印结果
+print("Tilton Bridge地点的Citrulline平均值:")
+print(tb_avg)
+
+# =============================================================================
+# ### Exercise 4: 定义时间间隔计算函数
+def deltas(values: list[float], total_duration: float) -> list[float]:
+    """
+    计算事件时间点之间的时间间隔（包括首尾特殊处理）
+    
+    参数:
+        values: 按升序排列的事件时间点列表
+        total_duration: 总记录时长（秒）
+    
+    返回:
+        时间间隔列表（首事件时间、事件间间隔、末事件到结束的间隔）
+    
+    示例:
+    >>> deltas([0.98, 2.51, 2.82, 3.39], 4.0)
+    [0.98, 1.53, 0.31, 0.57, 0.61]
+    """
+    # 处理空列表情况
+    if not values:
+        return [total_duration]
+    
+    intervals = []
+    # 第一个间隔：从开始到第一个事件
+    intervals.append(values[0])
+    
+    # 中间间隔：事件之间的时间差
+    for i in range(1, len(values)):
+        intervals.append(values[i] - values[i-1])
+    
+    # 最后一个间隔：最后事件到记录结束
+    intervals.append(total_duration - values[-1])
+    return intervals
+
+# 运行文档测试
+print("\nExercise 4: 运行函数文档测试...")
+doctest_result = doctest.testmod()
+print(f"文档测试结果：{doctest_result}")
+
+# Exercise 4: 应用oddity函数到不同性别的年龄数据
+# 分别获取男性和女性的数据，按年龄排序并重置索引
+male_ages = df[df['sex'] == 'M'].sort_values('age_years')['age_years'].reset_index(drop=True)
+female_ages = df[df['sex'] == 'F'].sort_values('age_years')['age_years'].reset_index(drop=True)
+
+# 应用函数
+male_adjusted = oddity(male_ages)
+female_adjusted = oddity(female_ages)
+print("Exercise 4 completed: oddity function applied")
+
+# Exercise 4: Apply dehorning count and find most dehorned rhino
+# 按犀牛ID分组，按日期排序后应用去角计数函数
+dehorn_counts = rhinos_df.groupby('RhinosAtSighting').apply(
+    lambda group: dehornings(group.sort_values('Date')['Horn'].tolist())
+)
+
+# 找出去角次数最多的犀牛
+max_dehorn_rhino = dehorn_counts.idxmax()
+max_count = dehorn_counts.max()
+
+# Exercise 4: Define swap consecutive values function
+def swap_consecutive(series: pd.Series) -> pd.Series:
+    """
+    Swap consecutive values in a series.
+    
+    Args:
+        series: Input pandas Series
+        
+    Returns:
+        Series with consecutive values swapped
+        
+    Examples:
+    >>> s = pd.Series([1, 2, 3, 4, 5])
+    >>> swap_consecutive(s)
+    0    2
+    1    1
+    2    4
+    3    3
+    4    5
+    dtype: int64
+    """
+    # 创建交换索引的数组
+    swap_idx = np.arange(len(series))
+    swap_idx[1::2] = swap_idx[::2]  # 偶数索引指向前一个位置
+    swap_idx[::2] = np.arange(1, len(series), 2)  # 奇数索引指向后一个位置
+    
+    # 处理奇数长度序列
+    if len(series) % 2 == 1:
+        swap_idx[-1] = len(series) - 1  # 最后一个元素保持不变
+    
+    return series.iloc[swap_idx].reset_index(drop=True)
+
+# Run doctests
+import doctest
+doctest.testmod()
+
+# Exercise 4: Define function to combine two walks
+def combine_walks(walk1: np.ndarray, walk2: np.ndarray) -> np.ndarray:
+    """
+    交替组合两个随机行走路径
+    
+    参数:
+        walk1: 第一个行走路径 (N,2)数组
+        walk2: 第二个行走路径 (M,2)数组
+        
+    返回:
+        组合后的新路径
+        
+    示例:
+    >>> walk1 = np.array([[0,0], [1,1], [1,2], [1,3]])
+    >>> walk2 = np.array([[1,0], [0,1]])
+    >>> combine_walks(walk1, walk2)
+    array([[ 0,  0],
+           [-1,  1],
+           [ 0,  2],
+           [ 0,  3],
+           [ 0,  4]])
+    """
+    # 计算每一步的位移向量
+    steps1 = np.diff(walk1, axis=0)
+    steps2 = np.diff(walk2, axis=0)
+    
+    # 确定最大步数
+    max_steps = max(len(steps1), len(steps2))
+    result = np.zeros((max_steps + 1, 2))
+    result[0] = walk1[0]  # 从第一个路径的起点开始
+    
+    # 交替应用步长
+    for i in range(max_steps):
+        # 确定使用哪个路径的步长
+        if i % 2 == 0 and i < len(steps1):  # 偶数步用walk1
+            step = steps1[i]
+        elif i % 2 == 1 and i < len(steps2):  # 奇数步用walk2
+            step = steps2[i]
+        elif i < len(steps1):  # walk2已用完，继续用walk1
+            step = steps1[i]
+        else:  # walk1已用完，继续用walk2
+            step = steps2[i]
+        
+        # 应用步长
+        result[i+1] = result[i] + step
+    
+    return result
+
+# 运行文档测试
+import doctest
+doctest.testmod()
+print("Exercise 4 completed: combine_walks function defined and tested")
+
+# Exercise 4: Find most dehorned rhino
+# 按日期排序后应用dehornings函数
+dehorn_counts = rhinos_df.groupby('RhinosAtSighting').apply(
+    lambda group: dehornings(group.sort_values('Date')['Horn'].tolist())
+)
+
+# 找出去角次数最多的犀牛
+most_dehorned = dehorn_counts.idxmax()
+max_dehorns = dehorn_counts.max()
+print(f"Exercise 4 completed: Most dehorned rhino is {most_dehorned} with {max_dehorns} dehornings")
+
+# Exercise 4: Apply triplet sum to samples column
+# 应用三元组和函数到samples列
+triplet_sums = sum_triplets(birds['samples'])
+print("Exercise 4 completed: Triplet sums of samples:")
+print(triplet_sums.head())
+
+
+
+
+
+
+
+
+
