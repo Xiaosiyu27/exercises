@@ -13,8 +13,7 @@
 # ---
 
 # # Programming in Python
-# ## Exam: February 11, 2025
-#
+# ## Exam: January 21, 2025
 #
 # You can solve the exercises below by using standard Python 3.12 libraries, NumPy, Matplotlib, Pandas, PyMC.
 # You can browse the documentation: [Python](https://docs.python.org/3.12/), [NumPy](https://numpy.org/doc/1.26/index.html), [Matplotlib](https://matplotlib.org/3.10.0/users/index.html), [Pandas](https://pandas.pydata.org/pandas-docs/version/2.2/index.html), [PyMC](https://www.pymc.io/projects/docs/en/stable/api.html).
@@ -28,308 +27,240 @@
 # import doctest
 # doctest.testmod()
 # ```
+#
 
-import numpy as np   # type: ignore
-import pandas as pd  # type: ignore
+import numpy as np
+import pandas as pd             # type: ignore
 import matplotlib.pyplot as plt # type: ignore
-import pymc as pm   # type: ignore
+import pymc as pm               # type: ignore
+import arviz as az              # type: ignore
 
-# ### Exercise 1 (max 3 points)
+# ### Exercise 1 (max 2 points)
 #
-# Plot a bidimensional grid 51x51 of dots. Your picture should be similar to the following (the color is not important):
+# The file [bird_foo_data.csv](./bird_foo_data.csv) dataset contains the data from all fox diet studies that were analysed to generate the frequency of occurrence of birds in fox diets across Australia. The data come from: 
+# Stobo-Wilson, A., Murphy, B., Legge, S., Caceres-Escobar, H., Chapple, D., Crawford, H., Dawson, S., Dickman, C., Doherty, T., Fleming, P., Garnett, S., Gentle, M., Newsome, T., Palmer, R., Rees, M., Ritchie, E., Speed, J., Stuart, J.-M., Suarez-Castro, A., … Woinarski, J. (2022). Counting the bodies: estimating the numbers and spatial variation of Australian reptiles, birds and mammals killed by two invasive mesopredators [Zenodo](https://doi.org/10.5061/dryad.bk3j9kdcz)
 #
-# ![grid](grid.png)
+# Read the dataset in a DataFrame `birds`, use the ID column as the index.
 #
+#
+# Columns: subheadings:
+# - taxon: the taxon group that the dataset relates to
+# - type: specifies whether the diet data was collected from fox scat or fox stomach samples or both
+# - p_scat: the proportion of fox diet data that was collected from fox scats relative to fox stomachs
+# - samples: the number of individual fox diet samples that were collected
+# - total_in: the total number of individuals identified from fox stomach diet samples 
+# - mean_in: the mean number of individuals identified per fox stomach from all fox diet stomach 	samples
+# - map: mean annual precipitation at the study location where fox diet samples were collected 
+# - mat: mean annual temperature at the study location where fox diet samples were collected
+# - cover: mean tree cover at the study location where fox diet samples were collected
+# - rugged: topographic ruggedness at the study location where fox diet samples were collected
+# - popden: human population density at the study location where fox diet samples were collected 
+# - vast: vegetation disturbance at the study location where fox diet samples were collected
+# - distcoast: distance to coast at the study location where fox diet samples were collected 
+#
+
+birds=pd.read_csv('bird_foo_data.csv',index_col='ID')
+print(birds.head())
+
+# ### Exercise 2 (max 4 points)
+#
+# Compute the number of samples collected in the scat and in the stomach. When the `type` column is "both (not stated)" or "scat & stomach" use the value of `p_scat` to distribuite the samples between the two types (float values are ok). To get the full marks do not use explicit loops.
+
+cond_scat=birds['type']=='scat'
+cond_stomach=birds['type']=='stomach'
+cond_both=birds['type'].isin(['both(not stated)','scat&stomach'])
+n_scat=np.select(
+[cond_scat,cond_stomach,cond_both],[birds['samples'],0,birds['samples']*birds['p_scat']],default=0
+)
+n_stomach=np.select(
+[cond_scat,cond_stomach,cond_both],[0,birds['samples'],birds['samples']*(1-birds['p_scat'])],default=0
+)
+birds['n_scat']=n_scat
+birds['n_stomach']=n_stomach
+birds[['type','samples','p_scat','n_scat','n_stomach']].head()
+
+
+# ### Exercise 3 (max 7 points)
+#
+# Define a function which takes a takes a `pd.Series` (of integers) and it compute a (shorter) one with the sums of subsequent triplets of values.
+# For example if the series contains the values 1,2,3,4,5 the result should be a series with 6,9,12.
+#
+# To get the full marks, you should declare correctly the type hints (the signature of the function) and add a doctest string.
 
 # +
+def sum_triplets(s: pd.Series) -> pd.Series:
+    """
+    Return the sum of every three consecutive integers in the input series.
+    For example:
+    >>> sum_triplets(pd.Series([1,2,3,4,5]))
+    0     6
+    1     9
+    2    12
+    dtype: int64
+    """
+    return s.rolling(window=3).sum().dropna().astype(int).reset_index(drop=True)
 
-# 生成坐标
-x = np.arange(51)
-y = np.arange(51)
-X, Y = np.meshgrid(x, y)
-
-# 绘制点阵
-plt.figure(figsize=(5, 5))
-plt.scatter(X, Y, color='dodgerblue', s=5)  # 颜色大小随意
-plt.axis('equal')  # 保持正方形比例
-plt.axis('off')    # 去掉坐标轴
-plt.show()
+print(sum_triplets(pd.Series([1,2,3,4,5])))
 # -
 
-# ### Exercise 2 (max 5 points)
+# ### Exercise 4 (max 2 points)
 #
-# On the grid defined in Exercise 1, compute 5 random walks, starting in the central dot, going on for 50 steps of 1 in the horizontal (left or right), vertical (up or down) or diagonal (i.e. a step of 1 in both the horizontal and vertical directions). If a walk reaches the end of the grid, it starts again on the opposite side: in other words, on a line of dots to the left of the leftmost dot there is the rightmost one; same for all the directions.
+# Apply the function define in Exercise 3 to column `samples`. To get the full marks do not use explicit loops.
+
+import pandas as pd
+df = pd.DataFrame({'samples': [1, 2, 3, 4, 5]})
+df['triplets_sum']=sum_triplets(df['samples'])
+
+# ### Exercise 5 (max 5 points)
+#
+# Make a copy of the DataFrame `birds` in which every row with `type` "both (not stated)" or "scat & stomach" is duplicated: one row should have
+# type "scat" and the other "stomach", the `samples` and `total_in` (if is not n/a) are distributed according to `p_scat`. Use only integer numbers for the samples and be sure the sum of samples is preserved for each pair of duplicated rows.
 
 # +
+import pandas as pd
 import numpy as np
+
+# 假定 birds 已经存在，结构需含 'type', 'samples', 'total_in', 'p_scat'
+
+# 1. 标记需要拆分的行
+split_mask = birds['type'].isin(['both (not stated)', 'scat & stomach'])
+
+# 2. 处理拆分
+def split_row(row):
+    n = int(row['samples'])
+    p = float(row['p_scat'])
+    # 拆分样本量
+    scat_samples = int(np.round(n * p))
+    stomach_samples = n - scat_samples
+
+    # 拆分 total_in（注意 total_in 可能为 NaN）
+    if pd.notna(row['total_in']):
+        total_in = int(row['total_in'])
+        scat_total = int(np.round(total_in * p))
+        stomach_total = total_in - scat_total
+    else:
+        scat_total = np.nan
+        stomach_total = np.nan
+
+    # 构造两行
+    scat_row = row.copy()
+    scat_row['type'] = 'scat'
+    scat_row['samples'] = scat_samples
+    scat_row['total_in'] = scat_total
+
+    stomach_row = row.copy()
+    stomach_row['type'] = 'stomach'
+    stomach_row['samples'] = stomach_samples
+    stomach_row['total_in'] = stomach_total
+
+    return pd.DataFrame([scat_row, stomach_row])
+
+# 只对需要拆分的行 apply，然后把所有行合并起来
+split_part = birds[split_mask].apply(split_row, axis=1)
+split_part = pd.concat(split_part.values, ignore_index=True)
+
+# 其余不需拆分行，直接取来
+keep_part = birds[~split_mask].copy()
+
+# 拼接结果
+birds_result = pd.concat([keep_part, split_part], ignore_index=True)
+
+# （可选：排序或重置索引，视需求而定）
+
+# 查看结果
+print(birds_result)
+# -
+
+# ### Exercise 6 (max 4 points)
+#
+# Add to the DataFrame birds a column with the standardized value of `total_in`. Remember that the standardized value measures how many standard deviations a specific value is far from the mean. If you have a ndarray of values `xx`: `(xx - xx.mean())/xx.std()`. Then plot a density histogram of this new column. 
+
+# +
 import matplotlib.pyplot as plt
 
-size = 51
-steps = 50
-walks = 5
+# 1. 计算标准化列
+mean = birds['total_in'].mean()
+std = birds['total_in'].std()
+birds['total_in_std'] = (birds['total_in'] - mean) / std
 
-# mesh grid，底图点阵
-x = np.arange(size)
-y = np.arange(size)
-X, Y = np.meshgrid(x, y)
-
-# 8种可能移动
-moves = [
-    (-1,  0), (1,  0),   # 左右
-    ( 0, -1), (0,  1),   # 上下
-    (-1, -1), (-1, 1),   # 左上、左下
-    ( 1, -1), (1,  1)    # 右上、右下
-]
-
-center = size // 2
-
-plt.figure(figsize=(6, 6))
-plt.scatter(X, Y, color='lightgrey', s=5)   # 背景点阵
-
-colors = ['r', 'b', 'g', 'orange', 'purple']
-for walk_idx in range(walks):
-    traj_x = [center]
-    traj_y = [center]
-    x, y = center, center
-    for _ in range(steps):
-        dx, dy = moves[np.random.randint(0, 8)]
-        x = (x + dx) % size
-        y = (y + dy) % size
-        traj_x.append(x)
-        traj_y.append(y)
-    plt.plot(traj_x, traj_y, color=colors[walk_idx], marker='o', markersize=3, label=f'Walk {walk_idx+1}')
-
-plt.axis('equal')
-plt.axis('off')
-plt.legend()
+# 2. 画出密度直方图（去除缺失值）
+birds['total_in_std'].plot(kind='hist', bins=30, density=True, alpha=0.7, edgecolor='black')
+plt.xlabel('Standardized total_in')
+plt.ylabel('Density')
+plt.title('Density Histogram of Standardized total_in')
 plt.show()
 # -
 
-# ### Exercise 3 (max 4 points)
+
+# ### Exercise 7 (max 4 points)
 #
-# Plot the walks computed in Exercise 2.
+#
+# Plot a matrix of scatter plots (for each pair a,b you can plot just a,b and leave b,a empty) of all the combinations of `map`, `mat`, `cover`, `ragged`. They should appear all in the same figure. Put also a proper title to each plot.
 
 # +
-import numpy as np
-import matplotlib.pyplot as plt
 
-size = 51                 # 点阵尺寸，51x51
-steps = 50                # 每条轨迹步数
-walks = 5                 # 轨迹数
+# columns to use for scatter plot matrix
+cols = ['map', 'mat', 'cover', 'rugged']
+n = len(cols)  # 总变量数
 
-# 生成二维点阵用作底图
-x = np.arange(size)
-y = np.arange(size)
-X, Y = np.meshgrid(x, y)
+fig, axes = plt.subplots(n, n, figsize=(12, 12))  # 4x4大的画布
 
-# 定义8个可能的移动方向（水平，垂直，斜对角）
-moves = [
-    (-1,  0), (1,  0),     # 左、右
-    ( 0, -1), (0,  1),     # 上、下
-    (-1, -1), (-1, 1),     # 左上、左下
-    ( 1, -1), (1,  1)      # 右上、右下
-]
-
-center = size // 2        # 中心点坐标（起点）
-
-# 保存所有轨迹的坐标
-all_trajs = []            # 轨迹，每一条是[[x0,x1,...],[y0,y1,...]]
-
-for walk_idx in range(walks):
-    traj_x = [center]     # 当前轨迹的x坐标列表，初始为中心
-    traj_y = [center]     # 当前轨迹的y坐标列表
-    x, y = center, center # 当前点初始化为中心
-    for _ in range(steps):
-        dx, dy = moves[np.random.randint(0, 8)]  # 随机选一个方向
-        x = (x + dx) % size                      # 边界循环处理
-        y = (y + dy) % size
-        traj_x.append(x)
-        traj_y.append(y)
-    all_trajs.append((traj_x, traj_y))           # 保存该条轨迹
-
-# 绘制
-plt.figure(figsize=(6, 6))
-plt.scatter(X.ravel(), Y.ravel(), color='lightgrey', s=5)   # 背景点阵
-
-colors = ['r', 'b', 'g', 'orange', 'purple']                # 预设轨迹颜色
-for idx, (traj_x, traj_y) in enumerate(all_trajs):
-    plt.plot(traj_x, traj_y, color=colors[idx], marker='o', markersize=3, label=f'Walk {idx+1}')  # 绘制轨迹
-
-plt.axis('equal')           # 宽高一致
-plt.axis('off')             # 不显示坐标轴
-plt.legend()                # 图例
-plt.show()
-# -
-
-# ### Exercise 4 (max 7 points)
-#
-# Define a function that takes two random walks, described by the coordinates of the traversed dots, and computes a new one. The resulting walk:
-# 1. the first step is taken from the first path
-# 2. the second step is the first step of the second path applied on the current position resulting after 1.
-# 3. the next steps are computed in the same way alternating steps from the first and the second path; if one path is shorter, when it finishes the next steps come from the remaining part of the longer path
-#
-# For example: if the two walks are `[(0,0), (1,1), (1,2), (1,3)]` and `[(1,0), (0,1)]`, 
-# the resulting walk is `[(0,0), (-1,1), (0,2), (0,3), (0,4)]`
-#
-#
-# To get the full marks, you should declare correctly the type hints and add a doctest string.
-
-# +
-from typing import List, Tuple
-
-def combine_walks(
-    walk1: List[Tuple[int, int]], 
-    walk2: List[Tuple[int, int]]
-) -> List[Tuple[int, int]]:
-    """
-    按题意交替用步长，步长顺序应为walk2第1步，walk1第2步，walk2第2步……
-    >>> combine_walks([(0,0),(1,1),(1,2),(1,3)], [(0,0),(-1,0),(0,1)])
-    [(0, 0), (-1, -1), (0, 0), (0, 1), (0, 2)]
-    """
-    res = [walk1[0]]            # 初始点，结果轨迹
-    cur = walk1[0]              # 当前点
-    idx1, idx2 = 1, 1           # 两条轨迹的下一个点索引（步长下标）
-    n1, n2 = len(walk1)-1, len(walk2)-1
-    use_walk2 = True            # 先用walk2的第一步
-
-    while idx1 <= n1 or idx2 <= n2:
-        if use_walk2 and idx2 <= n2:
-            # 用walk2的当前步长
-            dx = walk2[idx2][0] - walk2[idx2-1][0]
-            dy = walk2[idx2][1] - walk2[idx2-1][1]
-            idx2 += 1
-        elif not use_walk2 and idx1 <= n1:
-            # 用walk1的当前步长
-            dx = walk1[idx1][0] - walk1[idx1-1][0]
-            dy = walk1[idx1][1] - walk1[idx1-1][1]
-            idx1 += 1
+for i, col_x in enumerate(cols):        # 遍历行方向的变量
+    for j, col_y in enumerate(cols):    # 遍历列方向的变量
+        ax = axes[i, j]                 # 找到对应子图
+        if i == j:
+            ax.text(0.5, 0.5, f'{col_x}', ha='center', va='center', fontsize=12)
+            ax.set_axis_off()  # 对角线上只写字不画坐标
         else:
-            # 如果某条轨迹已经用完步长，继续用另一条的剩余步长
-            if idx2 <= n2:
-                dx = walk2[idx2][0] - walk2[idx2-1][0]
-                dy = walk2[idx2][1] - walk2[idx2-1][1]
-                idx2 += 1
-            else:
-                dx = walk1[idx1][0] - walk1[idx1-1][0]
-                dy = walk1[idx1][1] - walk1[idx1-1][1]
-                idx1 += 1
-        # 更新当前位置，并加入结果
-        cur = (cur[0] + dx, cur[1] + dy)
-        res.append(cur)
-        use_walk2 = not use_walk2    # 交替使用步长
-    return res
+            ax.scatter(birds[col_y], birds[col_x], s=10, alpha=0.6)
+            # 绘制x=col_y, y=col_x的散点图
+            ax.set_xlabel(col_y)
+            ax.set_ylabel(col_x)
+            ax.set_title(f'{col_x} vs {col_y}', fontsize=10)
 
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
-
-# -
-
-# ### Exercise 5 (max 1 points)
-#
-# Load the data contained in the file `iris.csv` in a Pandas DataFrame.
-
-# +
-import pandas as pd  # 导入pandas库
-
-# 读取iris.csv文件到DataFrame
-df = pd.read_csv('iris.csv')  # 注意文件要和notebook在同一目录
-
-# （可选）查看前5行数据，验证加载成功
-print(df.head())
-# -
-
-# ### Exercise 6 (max 2 points)
-#
-#
-# Add to the dataframe two columns for the ratio between petal width and sepal width, and petal length and sepal length.
-
-df['petal_sepal_width_ratio'] = df['petal width'] / df['sepal width']
-df['petal_sepal_length_ratio'] = df['petal length'] / df['sepal length']
-print(df.head())
-
-# ### Exercise 7 (max 6 points)
-#
-# Make a figure with two plots, on the left plot the three histograms (use different colors) of the width ratios computed in Exercise 6 for each iris class, on the right plot the three histograms of the length ratios.
-
-# +
-import matplotlib.pyplot as plt
-
-# 先看一下列名
-print(df.columns)
-
-# 这里假如种类列叫 'class'（请替换为你的实际列名！）
-SPECIES_COL = 'class'   # 把这里替换成你实际种类列名
-# SPECIES_COL = 'Species'  # 比如你的表头其实是大写的
-# SPECIES_COL = 'variety'  # 或者其他
-
-classes = df[SPECIES_COL].unique()
-colors = ['r', 'g', 'b']
-
-plt.figure(figsize=(12, 5))
-
-# 左侧：宽度比
-plt.subplot(1, 2, 1)
-for i, species in enumerate(classes):
-    plt.hist(
-        df[df[SPECIES_COL] == species]['petal_sepal_width_ratio'],
-        bins=20, alpha=0.6, color=colors[i], label=species
-    )
-plt.xlabel('Petal/Sepal Width Ratio')
-plt.ylabel('Count')
-plt.title('Width Ratio Histograms by Species')
-plt.legend()
-
-# 右侧：长度比
-plt.subplot(1, 2, 2)
-for i, species in enumerate(classes):
-    plt.hist(
-        df[df[SPECIES_COL] == species]['petal_sepal_length_ratio'],
-        bins=20, alpha=0.6, color=colors[i], label=species
-    )
-plt.xlabel('Petal/Sepal Length Ratio')
-plt.ylabel('Count')
-plt.title('Length Ratio Histograms by Species')
-plt.legend()
-
-plt.tight_layout()
-plt.show()
+plt.tight_layout()  # 合理排布不挤
+plt.show()  # 展示画好的矩阵
 # -
 
 # ### Exercise 8 (max 5 points)
 #
-# Consider this statistical model: the sepal width of Iris-setosa is normally distributed, with an unknown mean, and an unknown standard deviation. Your *a priori* estimation for both distribution is an exponential distribution with $\lambda=1$. Use PyMC to sample the posterior distributions after having seen the actual values for Iris-setosa. Plot the results, then print the mean and the standard deviation of the observed sample in your dataset.
+# Consider this statistical model: 
+#
+# - the parameter $\alpha$ is normally distributed with mean 0, and stdev 3
+# - the parameter $\beta$ is normally distributed with mean 0, and stdev 5
+# - the parameter $\sigma$ is exponentially distributed with $\lambda = 1$
+# - the the mean of the observed value of `map` is given by $\alpha + \beta\cdot C$ where C is the observed value of `cover`, its std deviation is $\sigma$
+#
+# Use PyMC to sample the posterior distributions after having seen the actual values for `map`.  Plot the posterior.
 
 # +
-import pymc as pm
-import arviz as az
-import numpy as np
-import matplotlib.pyplot as plt
-
-# 真实观测数据
-data = setosa_sw.values
+# 假设birds DataFrame已包含真实map和cover列
+map_obs = birds['map'].values
+cover_obs = birds['cover'].values
 
 with pm.Model() as model:
-    # 均值与标准差的先验: 指数分布, lambda=1
-    mu = pm.Exponential("mu", lam=1)
-    sigma = pm.Exponential("sigma", lam=1)
-    # 似然：正态分布
-    obs = pm.Normal("obs", mu=mu, sigma=sigma, observed=data)
+    # 先验分布
+    alpha = pm.Normal('alpha', mu=0, sigma=3)
+    beta = pm.Normal('beta', mu=0, sigma=5)
+    sigma = pm.Exponential('sigma', lam=1)
+
+    # 线性关系
+    mu = alpha + beta * cover_obs
+
+    # 观测分布
+    obs = pm.Normal('obs', mu=mu, sigma=sigma, observed=map_obs)
+
     # 采样
-    trace = pm.sample(2000, tune=1000, cores=1, return_inferencedata=True, random_seed=0)
+    trace = pm.sample(1000, tune=1000, target_accept=0.9, random_seed=42)
 
-# 画出后验分布
-az.plot_posterior(trace, var_names=['mu', 'sigma'])
+# 画后验分布
+az.plot_posterior(trace, var_names=['alpha', 'beta', 'sigma'])
 plt.show()
-
-# 打印观测样本的均值与标准差
-print("观测样本均值: ", data.mean())
-print("观测样本标准差: ", data.std(ddof=1))
-
-# 打印后验mu和sigma的均值
-print("后验mu的均值: ", trace.posterior['mu'].values.mean())
-print("后验sigma的均值: ", trace.posterior['sigma'].values.mean())
 # -
+
+
+
+
 
 
 
