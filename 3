@@ -1,3 +1,18 @@
+统计出现次数 count 不重复次数
+
+def dehornings(sightings):
+    count = 0
+    prev = None
+    for sighting in sightings:
+        if sighting == "Dehorned" and prev != "Dehorned":
+            count += 1
+        prev = sighting
+    return count
+dehornings(["Horned","Horned","Dehorned"])     
+
+
+
+
 练习3: 统计三联体及其反向的出现次数
 # =============================================================================
 def count_triplet_occurrences(sequence: str, triplet: str) -> int:
