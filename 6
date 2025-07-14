@@ -1,3 +1,13 @@
+一个变量的直方图
+rhinos_count_per_reserve=df.groupby('Reserve')['RhinosAtSighting'].nunique()
+plt.hist(rhinos_count_per_reserve.values,bins=10)
+plt.xlabel('Number of rhinos')
+plt.ylabel('Number of reserves')
+plt.title('Distribution of rhinos per reserve')
+plt.show()
+
+
+
 # 练习6: 标准化值的直方图
 # =============================================================================
 plt.figure(figsize=(10, 6))
