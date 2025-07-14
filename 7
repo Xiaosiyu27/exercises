@@ -1,3 +1,14 @@
+两个变量的直方图
+
+male_rhinos=df[df['Sex']=='Male'].groupby('Reserve')['RhinosAtSighting'].nunique()
+famale_rhinos=df[df['Sex']=='Female'].groupby('Reserve')['RhinosAtSighting'].nunique()
+counts_rhinos=pd.DataFrame({'Male':male_rhinos,'Female':famale_rhinos}).fillna(0)
+counts_rhinos.plot(kind='bar')
+plt.xlabel('Reserve')
+plt.ylabel('Number of rhinos')
+plt.title('The Number of male and remale rhinos')
+plt.show()
+
 # 练习7: 偶数和奇数出现次数的直方图
 # =============================================================================
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
