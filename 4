@@ -1,3 +1,17 @@
+分组，找出最大值
+
+def find_most_dehorned_rhino(df):
+    grouped = df.groupby('RhinosAtSighting').apply(
+    lambda x:x.sort_values('Date')['Horn'].tolist()
+    )
+    dehorned_counts=grouped.apply(dehornings)
+    most_dehorned=dehorned_counts.idxmax()
+    return most_dehorned
+print(find_most_dehorned_rhino(df))
+
+
+
+
 # 练习4: 创建包含三联体计数的DataFrame
 # =============================================================================
 # 初始化计数字典
