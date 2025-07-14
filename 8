@@ -1,3 +1,25 @@
+先验分布
+with pm.Model() as model:
+    # 先验分布
+    alpha = pm.Normal('alpha', mu=0, sigma=2)
+    beta = pm.Normal('beta', mu=0, sigma=2)
+    sigma = pm.Exponential('sigma', lam=1)
+    
+    # 均值表达式
+    mean_pred = alpha + beta * N_rhinos
+    
+    # 似然 (观测建模)
+    obs = pm.Normal('obs', mu=mean_pred, sigma=sigma, observed=mean_counts)
+    
+    # 采样
+    trace = pm.sample(1000, return_inferencedata=True, progressbar=False)
+    
+    # 画后验分布
+    az.plot_posterior(trace)
+    plt.show()
+
+
+
 # 练习8: 使用PyMC进行贝叶斯建模
 # =============================================================================
 # 准备数据
